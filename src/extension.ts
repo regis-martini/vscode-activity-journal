@@ -32,20 +32,33 @@ export function activate(context: vscode.ExtensionContext) {
 	});
 	context.subscriptions.push(closeListener);
 
-	const forceSyncCommand = vscode.commands.registerCommand('activityJournal.forceSync', () => {
-		vscode.window.showInformationMessage('Forcing sync...');
-		if (activityBuffer.length === 0) {
-            vscode.window.showInformationMessage('No activities to sync.');
-            return;
-        }
+	async function syncWithBackend() {
+		console.log("Attempting sync...");
+		try {
+			if (activityBuffer.length === 0) {
+				vscode.window.showInformationMessage('No activities to sync.');
+				return;
+			}
 
-        // For now, just print them and clear the buffer.
-        // Later, we'll send them to backend.
-        console.log(`Syncing ${activityBuffer.length} activities:`, activityBuffer);
-        activityBuffer = [];
-        vscode.window.showInformationMessage('Activities synced (placeholder).');
-	});
-	context.subscriptions.push(forceSyncCommand);
+			// For now, just print them and clear the buffer.
+			// Later, we'll send them to backend.
+			console.log(`Syncing ${activityBuffer.length} activities:`, activityBuffer);
+			activityBuffer = [];
+			vscode.window.showInformationMessage('Activities synced (placeholder).');
+		} catch (err) {
+			console.error("Sync failed:", err);
+		}
+	}
+
+	// Setup a periodic task every 5 minutes (300,000 ms)
+	const fiveMinutes = 5 * 60 * 1000;
+	const intervalId = setInterval(() => {
+		console.log("Periodic sync triggered.");
+		syncWithBackend(); // call your sync function here
+	}, fiveMinutes);
+
+	// Make sure to clear it on deactivate
+	context.subscriptions.push({ dispose: () => clearInterval(intervalId) });
 }
 
 // This method is called when your extension is deactivated
