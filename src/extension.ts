@@ -1,15 +1,14 @@
-// The module 'vscode' contains the VS Code extensibility API
-// Import the module and reference it with the alias vscode in your code below
 import * as vscode from 'vscode';
 
 const config = vscode.workspace.getConfiguration('activityJournal');
 const backendUrl = config.get<string>('backendUrl');
 const enableLogging = config.get<boolean>('enableLogging');
-console.log(`Loaded config: backendUrl=${backendUrl}, enableLogging=${enableLogging}`);
+const syncFrequencyInMinutes = config.get<number>('syncFrequencyInMinutes') ?? 5;
 let activityBuffer: Array<{ timestamp: Date; action: string; fileName?: string }> = [];
 
-// This method is called when your extension is activated
-// Your extension is activated the very first time the command is executed
+console.log(`Loaded config: backendUrl=${backendUrl}, enableLogging=${enableLogging}, syncFrequencyInMinutes=${syncFrequencyInMinutes}`);
+
+
 export function activate(context: vscode.ExtensionContext) {
 	console.log('Congratulations, your extension "vscode-activity-journal" is now active!');
 
@@ -51,7 +50,7 @@ export function activate(context: vscode.ExtensionContext) {
 	}
 
 	// Setup a periodic task every 5 minutes (300,000 ms)
-	const fiveMinutes = 5 * 60 * 1000;
+	const fiveMinutes = syncFrequencyInMinutes * 60 * 1000;
 	const intervalId = setInterval(() => {
 		console.log("Periodic sync triggered.");
 		syncWithBackend(); // call your sync function here
