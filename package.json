@@ -9,13 +9,29 @@
   "categories": [
     "Other"
   ],
-  "activationEvents": [],
+  "activationEvents": ["onStartupFinished"],
   "main": "./out/extension.js",
   "contributes": {
+    "configuration": {
+      "type": "object",
+      "title": "Activity Journal",
+      "properties": {
+        "activityJournal.backendUrl": {
+          "type": "string",
+          "default": "https://sas-backend-api.com",
+          "description": "The backend API endpoint"
+        },
+        "activityJournal.enableLogging": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable or disable activity logging"
+        }
+      }
+    },
     "commands": [
       {
-        "command": "vscode-activity-journal.helloWorld",
-        "title": "Hello World"
+        "command": "activityJournal.forceSync",
+        "title": "Activity Journal: Force Sync Logs"
       }
     ]
   },
