@@ -21,15 +21,11 @@ let finalizedSessions: Map<string, FileSession[]> = new Map();
 console.log(`Loaded config: backendUrl=${backendUrl}, enableLogging=${enableLogging}, syncFrequencyInMinutes=${syncFrequencyInMinutes}`);
 
 function getCurrentProjectId(): string {
-	const editor = vscode.window.activeTextEditor;
-	if (editor) {
-		const folder = vscode.workspace.getWorkspaceFolder(editor.document.uri);
-		return folder ? folder.uri.toString() : "no-root";
-	}
-	return "no-root";
+	return vscode.workspace.workspaceFolders?.[0].uri.toString() ?? "no-root";
 }
 
 function finalizeSession(projectId: string, session: FileSession) {
+	console.log(`Finalizing session for ${projectId}: ${session.fileUri}`);
 	if (!finalizedSessions.has(projectId)) {
 		finalizedSessions.set(projectId, []);
 	}
@@ -38,31 +34,29 @@ function finalizeSession(projectId: string, session: FileSession) {
 
 async function syncWithBackend() {
 	console.log("Attempting sync...");
-	async function syncWithBackend() {
-		// Gather all concluded sessions from all projects
-		const dataToSend = Array.from(finalizedSessions.entries()).map(([projectId, sessions]) => ({
-			projectId,
-			sessions
-		}));
+	// Gather all concluded sessions from all projects
+	const dataToSend = Array.from(finalizedSessions.entries()).map(([projectId, sessions]) => ({
+		projectId,
+		sessions
+	}));
 
-		if (dataToSend.length === 0) {
-			vscode.window.showInformationMessage('No activities to sync.');
-			return;
-		}
+	if (dataToSend.length === 0) {
+		vscode.window.showInformationMessage('No activities to sync.');
+		return;
+	}
 
-		// Send dataToSend to backend
-		// Upon successful send, clear finalizedSessions
-		// Or remove only sessions that were successfully sent
-		try {
-			// send dataToSend to backend
-			// e.g. await fetch(backendUrl, { method: 'POST', body: JSON.stringify(dataToSend) });
-			console.log("Synced data:", dataToSend);
-			// If success:
-			finalizedSessions.clear();
-		} catch (err) {
-			console.error("Sync error:", err);
-			vscode.window.showInformationMessage('Sync error.');
-		}
+	// Send dataToSend to backend
+	// Upon successful send, clear finalizedSessions
+	// Or remove only sessions that were successfully sent
+	try {
+		// send dataToSend to backend
+		// e.g. await fetch(backendUrl, { method: 'POST', body: JSON.stringify(dataToSend) });
+		console.log("Synced data:", dataToSend);
+		// If success:
+		finalizedSessions.clear();
+	} catch (err) {
+		console.error("Sync error:", err);
+		vscode.window.showInformationMessage('Sync error.');
 	}
 }
 
@@ -73,6 +67,7 @@ export function activate(context: vscode.ExtensionContext) {
 		// For now, just log to the console. Later, this will be saved to an in-memory store.
 		console.log(`Opened: ${document.fileName}`);
 		const projectId = getCurrentProjectId();
+		console.log(`ProjectId: ${projectId}`);
 		if (!projectsData.has(projectId)) {
 			projectsData.set(projectId, new Map());
 		}
@@ -89,6 +84,7 @@ export function activate(context: vscode.ExtensionContext) {
 	const saveListener = vscode.workspace.onDidSaveTextDocument((document) => {
 		console.log(`Saved: ${document.fileName}`);
 		const projectId = getCurrentProjectId();
+		console.log(`ProjectId: ${projectId}`);
 		const projectMap = projectsData.get(projectId);
 		if (projectMap) {
 			const session = projectMap.get(document.uri.toString());
@@ -100,11 +96,11 @@ export function activate(context: vscode.ExtensionContext) {
 	context.subscriptions.push(saveListener);
 
 	const closeListener = vscode.workspace.onDidCloseTextDocument((document) => {
-		console.log(`Closed: ${document.fileName}`);
 		const projectId = getCurrentProjectId();
 		const projectMap = projectsData.get(projectId);
 		if (projectMap) {
 			const session = projectMap.get(document.uri.toString());
+			console.log(`Session for file: ${session?.fileUri}`);
 			if (session) {
 				session.closedAt = new Date();
 				// Move this session to a finalized list or mark it as ready to be synced.
