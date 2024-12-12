@@ -1,3 +1,4 @@
+import path from 'path';
 import * as vscode from 'vscode';
 
 const config = vscode.workspace.getConfiguration('activityJournal');
@@ -13,9 +14,7 @@ interface FileSession {
 	// Possibly track other stats like # of changes or save intervals
 }
 
-// A per-project map: projectId -> fileUri -> FileSession
 let projectsData: Map<string, Map<string, FileSession>> = new Map();
-// projectId -> array of concluded sessions
 let finalizedSessions: Map<string, FileSession[]> = new Map();
 
 console.log(`Loaded config: backendUrl=${backendUrl}, enableLogging=${enableLogging}, syncFrequencyInMinutes=${syncFrequencyInMinutes}`);
@@ -32,9 +31,14 @@ function finalizeSession(projectId: string, session: FileSession) {
 	finalizedSessions.get(projectId)!.push(session);
 }
 
+function shouldSkipFile(filePath: string): boolean {
+	// Skip any file inside a .git folder
+	return filePath.includes(`.git`) ||
+		filePath.startsWith(`git`);
+}
+
 async function syncWithBackend() {
 	console.log("Attempting sync...");
-	// Gather all concluded sessions from all projects
 	const dataToSend = Array.from(finalizedSessions.entries()).map(([projectId, sessions]) => ({
 		projectId,
 		sessions
@@ -45,13 +49,11 @@ async function syncWithBackend() {
 		return;
 	}
 
-	// Send dataToSend to backend
-	// Upon successful send, clear finalizedSessions
-	// Or remove only sessions that were successfully sent
 	try {
 		// send dataToSend to backend
 		// e.g. await fetch(backendUrl, { method: 'POST', body: JSON.stringify(dataToSend) });
 		console.log("Synced data:", dataToSend);
+		// TODO: If offline or backend error: store dataToSend in a local file
 		// If success:
 		finalizedSessions.clear();
 	} catch (err) {
@@ -64,10 +66,11 @@ export function activate(context: vscode.ExtensionContext) {
 	console.log('Congratulations, your extension "vscode-activity-journal" is now active!');
 
 	const openListener = vscode.workspace.onDidOpenTextDocument((document) => {
-		// For now, just log to the console. Later, this will be saved to an in-memory store.
-		console.log(`Opened: ${document.fileName}`);
+		const filePath = document.uri.fsPath;
+		if (shouldSkipFile(filePath)) {
+			return;
+		}
 		const projectId = getCurrentProjectId();
-		console.log(`ProjectId: ${projectId}`);
 		if (!projectsData.has(projectId)) {
 			projectsData.set(projectId, new Map());
 		}
@@ -82,9 +85,11 @@ export function activate(context: vscode.ExtensionContext) {
 	context.subscriptions.push(openListener);
 
 	const saveListener = vscode.workspace.onDidSaveTextDocument((document) => {
-		console.log(`Saved: ${document.fileName}`);
+		const filePath = document.uri.fsPath;
+		if (shouldSkipFile(filePath)) {
+			return;
+		}
 		const projectId = getCurrentProjectId();
-		console.log(`ProjectId: ${projectId}`);
 		const projectMap = projectsData.get(projectId);
 		if (projectMap) {
 			const session = projectMap.get(document.uri.toString());
@@ -96,11 +101,14 @@ export function activate(context: vscode.ExtensionContext) {
 	context.subscriptions.push(saveListener);
 
 	const closeListener = vscode.workspace.onDidCloseTextDocument((document) => {
+		const filePath = document.uri.fsPath;
+		if (shouldSkipFile(filePath)) {
+			return;
+		}
 		const projectId = getCurrentProjectId();
 		const projectMap = projectsData.get(projectId);
 		if (projectMap) {
 			const session = projectMap.get(document.uri.toString());
-			console.log(`Session for file: ${session?.fileUri}`);
 			if (session) {
 				session.closedAt = new Date();
 				// Move this session to a finalized list or mark it as ready to be synced.
