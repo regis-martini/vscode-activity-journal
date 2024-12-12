@@ -2,7 +2,6 @@ import * as vscode from 'vscode';
 
 const config = vscode.workspace.getConfiguration('activityJournal');
 const backendUrl = config.get<string>('backendUrl');
-//const enableLogging = config.get<boolean>('enableLogging');
 const DEFAULT_SYNC_FREQUENCY = 5;
 const syncFrequencyInMinutes = config.get<number>('syncFrequencyInMinutes') ?? DEFAULT_SYNC_FREQUENCY;
 interface FileSession {
