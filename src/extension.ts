@@ -2,7 +2,7 @@ import * as vscode from 'vscode';
 
 const config = vscode.workspace.getConfiguration('activityJournal');
 const backendUrl = config.get<string>('backendUrl');
-const enableLogging = config.get<boolean>('enableLogging');
+//const enableLogging = config.get<boolean>('enableLogging');
 const DEFAULT_SYNC_FREQUENCY = 5;
 const syncFrequencyInMinutes = config.get<number>('syncFrequencyInMinutes') ?? DEFAULT_SYNC_FREQUENCY;
 interface FileSession {
@@ -16,7 +16,7 @@ interface FileSession {
 let projectsData: Map<string, Map<string, FileSession>> = new Map();
 let finalizedSessions: Map<string, FileSession[]> = new Map();
 
-console.log(`Loaded config: backendUrl=${backendUrl}, enableLogging=${enableLogging}, syncFrequencyInMinutes=${syncFrequencyInMinutes}`);
+console.log(`Loaded config: backendUrl=${backendUrl}, syncFrequencyInMinutes=${syncFrequencyInMinutes}`);
 
 function getCurrentProjectId(): string {
 	return vscode.workspace.workspaceFolders?.[0].uri.toString() ?? "no-root";
