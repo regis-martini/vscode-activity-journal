@@ -121,7 +121,6 @@ export function activate(context: vscode.ExtensionContext) {
 	});
 	context.subscriptions.push(closeListener);
 
-	// Setup a periodic task to sync with the backend
 	const fiveMinutes = syncFrequencyInMinutes * 60 * 1000;
 	const intervalId = setInterval(() => {
 		console.log("Periodic sync triggered.");
