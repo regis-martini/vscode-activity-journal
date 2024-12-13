@@ -12,13 +12,10 @@ interface FileSession {
 	savesCount: number;
 	// Possibly track other stats like # of changes or save intervals
 }
-
 let projectsData: Map<string, Map<string, FileSession>> = new Map();
 let finalizedSessions: Map<string, FileSession[]> = new Map();
 
-console.log(`Loaded config: syncFrequencyInMinutes=${syncFrequencyInMinutes} , githubOwner=${githubOwner}, githubRepo=${githubRepo}`);
-
-export function getCurrentProjectId(): string {
+function getCurrentProjectId(): string {
 	return vscode.workspace.workspaceFolders?.[0].uri.toString() ?? "no-root";
 }
 
@@ -73,7 +70,6 @@ async function commitMarkdownFileToGitHub(
 ): Promise<void> {
 	const url = `https://api.github.com/repos/${owner}/${repo}/contents/${filePath}`;
 
-	// Encode content in Base64 as required by the API
 	const base64Content = Buffer.from(content).toString('base64');
 
 	const body = {
@@ -110,7 +106,6 @@ async function syncWithGitHub(context: vscode.ExtensionContext) {
 		return;
 	}
 
-	// Combine sessions from all projects into one array if you wish.
 	let allSessions: FileSession[] = [];
 	for (const sessions of finalizedSessions.values()) {
 		allSessions = allSessions.concat(sessions);
@@ -135,34 +130,7 @@ async function syncWithGitHub(context: vscode.ExtensionContext) {
 	}
 }
 
-async function syncWithBackend() {
-	console.log("Attempting sync...");
-	const dataToSend = Array.from(finalizedSessions.entries()).map(([projectId, sessions]) => ({
-		projectId,
-		sessions
-	}));
-
-	if (dataToSend.length === 0) {
-		vscode.window.showInformationMessage('No activities to sync.');
-		return;
-	}
-
-	try {
-		// send dataToSend to backend
-		// e.g. await fetch(backendUrl, { method: 'POST', body: JSON.stringify(dataToSend) });
-		console.log("Synced data:", dataToSend);
-		// TODO: If offline or backend error: store dataToSend in a local file
-		// If success:
-		finalizedSessions.clear();
-	} catch (err) {
-		console.error("Sync error:", err);
-		vscode.window.showInformationMessage('Sync error.');
-	}
-}
-
 export function activate(context: vscode.ExtensionContext) {
-	console.log('Congratulations, your extension "vscode-activity-journal" is now active!');
-
 	const openListener = vscode.workspace.onDidOpenTextDocument((document) => {
 		const filePath = document.uri.fsPath;
 		if (shouldSkipFile(filePath)) {
@@ -209,9 +177,6 @@ export function activate(context: vscode.ExtensionContext) {
 			const session = projectMap.get(document.uri.toString());
 			if (session) {
 				session.closedAt = new Date();
-				// Move this session to a finalized list or mark it as ready to be synced.
-				// E.g., keep a separate `finalizedSessions: Map<string, FileSession[]>` structure
-				// Or store them separately right away.
 				finalizeSession(projectId, session);
 				projectMap.delete(document.uri.toString());
 			}
@@ -225,11 +190,9 @@ export function activate(context: vscode.ExtensionContext) {
 		syncWithGitHub(context);
 	}, fiveMinutes);
 
-	// Make sure to clear it on deactivate
 	context.subscriptions.push({ dispose: () => clearInterval(intervalId) });
 }
 
-// This method is called when your extension is deactivated
 export function deactivate(context: vscode.ExtensionContext) {
 	// Force-close any open sessions if needed
 	for (const [projectId, filesMap] of projectsData.entries()) {
