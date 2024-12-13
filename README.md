@@ -1,57 +1,42 @@
 # Developer Activity Journal README
 
-This is the README for your extension Developer Activity Journal. It logs projects,files and basic actions taken on this resources and tracks time spent on each file. It syncs with a github repository of the user choice on a user define frequency allowing the user to keep a journal of the actions done in the VS Code.
+Welcome to the Developer Activity Journal extension! This extension logs projects, files, and basic actions taken on these resources, tracking the time spent on each file. It syncs with a GitHub repository of the user's choice at a user-defined frequency, allowing the user to maintain a journal of actions performed in VS Code.
 
 ## Features
 
-Describe specific features of your extension including screenshots of your extension in action. Image paths are relative to this README file.
+- Logs time spent on each file.
+- Tracks basic actions on files and projects.
+- Syncs with a GitHub repository at user-defined intervals.
 
-For example if there is an image subfolder under your extension project workspace:
+![Feature Example](feature-example.png)
 
-\!\[feature X\]\(images/feature-x.png\)
-
-> Tip: Many popular extensions utilize animations. This is an excellent way to show off your extension! We recommend short, focused animations that are easy to follow.
+> Tip: Utilize animations to showcase your extension effectively. Short, focused animations are recommended.
 
 ## Requirements
 
-If you have any requirements or dependencies, add a section describing those and how to install and configure them.
+- Visual Studio Code
+- A GitHub account for repository synchronization
 
 ## Extension Settings
 
-Include if your extension adds any VS Code settings through the `contributes.configuration` extension point.
-
-For example:
-
 This extension contributes the following settings:
 
-* `myExtension.enable`: Enable/disable this extension.
-* `myExtension.thing`: Set to `blah` to do something.
+* `activityJournal.enable`: Enable/disable the extension.
+* `activityJournal.syncFrequency`: Set the frequency of synchronization with the GitHub repository.
 
 ## Known Issues
 
-Calling out known issues can help limit users opening duplicate issues against your extension.
+Please refer to the [issues section](https://github.com/your-repo/issues) for known issues and report any new ones.
 
 ## Release Notes
 
-Users appreciate release notes as you update your extension.
-
 ### 1.0.0
 
-Initial release of ...
+- Initial release of Developer Activity Journal.
 
-### 1.0.1
+## Following Extension Guidelines
 
-Fixed issue #.
-
-### 1.1.0
-
-Added features X, Y, and Z.
-
----
-
-## Following extension guidelines
-
-Ensure that you've read through the extensions guidelines and follow the best practices for creating your extension.
+Ensure that you've read through the extension guidelines and follow the best practices for creating your extension.
 
 * [Extension Guidelines](https://code.visualstudio.com/api/references/extension-guidelines)
 
@@ -63,9 +48,9 @@ You can author your README using Visual Studio Code. Here are some useful editor
 * Toggle preview (`Shift+Cmd+V` on macOS or `Shift+Ctrl+V` on Windows and Linux).
 * Press `Ctrl+Space` (Windows, Linux, macOS) to see a list of Markdown snippets.
 
-## For more information
+## For More Information
 
 * [Visual Studio Code's Markdown Support](http://code.visualstudio.com/docs/languages/markdown)
 * [Markdown Syntax Reference](https://help.github.com/articles/markdown-basics/)
 
-**Enjoy!**
+**Enjoy using Developer Activity Journal!**

@@ -28,7 +28,7 @@
         "activityJournal.githubOwner": {
           "type": "string",
           "description": "GitHub Username or Org",
-          "default": "regis-martini"
+          "default": ""
         },
         "activityJournal.githubRepo": {
           "type": "string",
