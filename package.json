@@ -2,7 +2,7 @@
   "name": "vscode-activity-journal",
   "displayName": "vscode-activity-journal",
   "description": "The extension capture actions from the user and how long the user has worked on each file and send data to  github as a journal of activity",
-  "version": "0.0.1",
+  "version": "1.0.0",
   "icon": "icon.png",
   "publisher": "regis-martini",
   "engines": {
