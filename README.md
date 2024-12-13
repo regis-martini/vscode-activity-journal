@@ -1,6 +1,6 @@
-# vscode-activity-journal README
+# Developer Activity Journal README
 
-This is the README for your extension "vscode-activity-journal". After writing up a brief description, we recommend including the following sections.
+This is the README for your extension Developer Activity Journal. It logs projects,files and basic actions taken on this resources and tracks time spent on each file. It syncs with a github repository of the user choice on a user define frequency allowing the user to keep a journal of the actions done in the VS Code.
 
 ## Features
 
