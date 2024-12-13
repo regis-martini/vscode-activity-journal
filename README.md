@@ -10,8 +10,6 @@ Welcome to the Developer Activity Journal extension! This extension logs project
 
 ![Feature Example](feature-example.png)
 
-> Tip: Utilize animations to showcase your extension effectively. Short, focused animations are recommended.
-
 ## Requirements
 
 - Visual Studio Code
