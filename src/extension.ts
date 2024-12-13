@@ -1,9 +1,10 @@
 import * as vscode from 'vscode';
 
 const config = vscode.workspace.getConfiguration('activityJournal');
-const backendUrl = config.get<string>('backendUrl');
 const DEFAULT_SYNC_FREQUENCY = 5;
 const syncFrequencyInMinutes = config.get<number>('syncFrequencyInMinutes') ?? DEFAULT_SYNC_FREQUENCY;
+const githubOwner = config.get<string>('githubOwner') || '';
+const githubRepo = config.get<string>('githubRepo') || '';
 interface FileSession {
 	fileUri: string;
 	openedAt: Date;
@@ -15,9 +16,9 @@ interface FileSession {
 let projectsData: Map<string, Map<string, FileSession>> = new Map();
 let finalizedSessions: Map<string, FileSession[]> = new Map();
 
-console.log(`Loaded config: backendUrl=${backendUrl}, syncFrequencyInMinutes=${syncFrequencyInMinutes}`);
+console.log(`Loaded config: syncFrequencyInMinutes=${syncFrequencyInMinutes} , githubOwner=${githubOwner}, githubRepo=${githubRepo}`);
 
-function getCurrentProjectId(): string {
+export function getCurrentProjectId(): string {
 	return vscode.workspace.workspaceFolders?.[0].uri.toString() ?? "no-root";
 }
 
@@ -29,10 +30,109 @@ function finalizeSession(projectId: string, session: FileSession) {
 	finalizedSessions.get(projectId)!.push(session);
 }
 
+async function getGithubToken(context: vscode.ExtensionContext): Promise<string | undefined> {
+	let token = await context.secrets.get('activityJournalGitHubToken');
+	if (!token) {
+		// If none stored, prompt the user once
+		const userInput = await vscode.window.showInputBox({
+			prompt: "Enter your GitHub Personal Access Token (with repo permissions)",
+			ignoreFocusOut: true,
+			password: true
+		});
+		if (userInput) {
+			token = userInput;
+			await context.secrets.store('activityJournalGitHubToken', token);
+		}
+	}
+	return token;
+}
+
+function generateMarkdownLog(sessions: FileSession[]): string {
+	let content = `# Activity Log - ${new Date().toISOString()}\n\n`;
+
+	for (const session of sessions) {
+		const duration = session.closedAt && session.openedAt
+			? (session.closedAt.getTime() - session.openedAt.getTime()) / 1000
+			: 0;
+		content += `- **File:** ${session.fileUri}\n`;
+		content += `  - Opened at: ${session.openedAt.toLocaleString()}\n`;
+		content += `  - Closed at: ${session.closedAt?.toLocaleString()}\n`;
+		content += `  - Duration: ${duration} seconds\n`;
+		content += `  - Saves: ${session.savesCount}\n\n`;
+	}
+
+	return content;
+}
+
+async function commitMarkdownFileToGitHub(
+	token: string,
+	owner: string,
+	repo: string,
+	filePath: string,
+	content: string
+): Promise<void> {
+	const url = `https://api.github.com/repos/${owner}/${repo}/contents/${filePath}`;
+
+	// Encode content in Base64 as required by the API
+	const base64Content = Buffer.from(content).toString('base64');
+
+	const body = {
+		message: `Add activity log ${filePath}`,
+		content: base64Content
+	};
+
+	const response = await fetch(url, {
+		method: 'PUT',
+		headers: {
+			'Accept': 'application/vnd.github.v3+json',
+			'Authorization': `Bearer ${token}`,
+			'Content-Type': 'application/json'
+		},
+		body: JSON.stringify(body)
+	});
+
+	if (!response.ok) {
+		const respText = await response.text();
+		throw new Error(`GitHub API error: ${response.status} - ${respText}`);
+	}
+}
+
 function shouldSkipFile(filePath: string): boolean {
 	// Skip any file inside a .git folder
 	return filePath.includes(`.git`) ||
 		filePath.startsWith(`git`);
+}
+
+async function syncWithGitHub(context: vscode.ExtensionContext) {
+	const token = await getGithubToken(context);
+	if (!token) {
+		vscode.window.showErrorMessage('No GitHub token available. Please set your token.');
+		return;
+	}
+
+	// Combine sessions from all projects into one array if you wish.
+	let allSessions: FileSession[] = [];
+	for (const sessions of finalizedSessions.values()) {
+		allSessions = allSessions.concat(sessions);
+	}
+
+	if (allSessions.length === 0) {
+		vscode.window.showInformationMessage('No activity to sync.');
+		return;
+	}
+
+	const markdown = generateMarkdownLog(allSessions);
+	const now = new Date();
+	const filePath = `activity-log-${now.getFullYear()}-${(now.getMonth() + 1).toString().padStart(2, '0')}-${now.getDate().toString().padStart(2, '0')}-${now.getHours().toString().padStart(2, '0')}${now.getMinutes().toString().padStart(2, '0')}.md`;
+
+	try {
+		await commitMarkdownFileToGitHub(token, githubOwner, githubRepo, filePath, markdown);
+		vscode.window.showInformationMessage(`Activity log committed to GitHub: ${filePath}`);
+		// Clear finalized sessions once synced
+		finalizedSessions.clear();
+	} catch (err: any) {
+		vscode.window.showErrorMessage(`Failed to sync with GitHub: ${err.message}`);
+	}
 }
 
 async function syncWithBackend() {
@@ -122,7 +222,7 @@ export function activate(context: vscode.ExtensionContext) {
 	const fiveMinutes = syncFrequencyInMinutes * 60 * 1000;
 	const intervalId = setInterval(() => {
 		console.log("Periodic sync triggered.");
-		syncWithBackend();
+		syncWithGitHub(context);
 	}, fiveMinutes);
 
 	// Make sure to clear it on deactivate
@@ -130,7 +230,7 @@ export function activate(context: vscode.ExtensionContext) {
 }
 
 // This method is called when your extension is deactivated
-export function deactivate() {
+export function deactivate(context: vscode.ExtensionContext) {
 	// Force-close any open sessions if needed
 	for (const [projectId, filesMap] of projectsData.entries()) {
 		for (const session of filesMap.values()) {
@@ -139,5 +239,5 @@ export function deactivate() {
 		}
 		filesMap.clear();
 	}
-	syncWithBackend();
+	syncWithGitHub(context);
 }

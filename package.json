@@ -9,22 +9,29 @@
   "categories": [
     "Other"
   ],
-  "activationEvents": ["onStartupFinished"],
+  "activationEvents": [
+    "onStartupFinished"
+  ],
   "main": "./out/extension.js",
   "contributes": {
     "configuration": {
       "type": "object",
       "title": "Activity Journal",
       "properties": {
-        "activityJournal.backendUrl": {
+        "activityJournal.githubToken": {
           "type": "string",
-          "default": "https://sas-backend-api.com",
-          "description": "The backend API endpoint"
+          "description": "Your GitHub Personal Access Token",
+          "default": ""
         },
-        "activityJournal.enableLogging": {
-          "type": "boolean",
-          "default": true,
-          "description": "Enable or disable activity logging"
+        "activityJournal.githubOwner": {
+          "type": "string",
+          "description": "GitHub Username or Org",
+          "default": "regis-martini"
+        },
+        "activityJournal.githubRepo": {
+          "type": "string",
+          "description": "GitHub Repo Name",
+          "default": "code-tracking"
         },
         "activityJournal.syncFrequencyInMinutes": {
           "type": "number",
