@@ -5,6 +5,10 @@
   "version": "1.0.0",
   "icon": "images/icon.png",
   "publisher": "regis-martini",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/regis-martini/vscode-activity-journal.git"
+  },
   "engines": {
     "vscode": "^1.95.0"
   },
