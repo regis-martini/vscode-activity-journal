@@ -8,7 +8,7 @@ Welcome to the Developer Activity Journal extension! This extension logs project
 - Tracks basic actions on files and projects.
 - Syncs with a GitHub repository at user-defined intervals.
 
-![Feature Example](feature-example.png)
+![Feature Example](images/feature-example.png)
 
 ## Requirements
 
